@@ -71,9 +71,6 @@ def save_progress(data):
 def download_file(base_dir, url, path):
     local_path = os.path.join(base_dir, path)
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
-    if os.path.exists(local_path):
-        print(f"[跳过] 已存在：{path}")
-        return
     print(f"[开始下载] {path}")
     try:
         r = session.get(url, stream=True, timeout=30)
@@ -105,10 +102,10 @@ def crawl(api_url, base_path, prefix, base_dir, progress, executor):
     except Exception as e:
         print(f"[抓取失败] {base_path} - {e}")
         return
-    
+ 
     if not items:
         return
-
+    
     for item in items:
         full_path = os.path.join(base_path, item['name']).replace('\\', '/')
         relative_path = os.path.join(prefix, item['name']).replace('\\', '/')
@@ -116,8 +113,9 @@ def crawl(api_url, base_path, prefix, base_dir, progress, executor):
             print(f"[目录] {relative_path}/")
             crawl(api_url, full_path, relative_path, base_dir, progress, executor)
         else:
-            if relative_path in progress:
-                print(f"[跳过] 已记录：{relative_path}")
+            local_file = os.path.join(base_dir, relative_path)
+            if relative_path in progress and os.path.exists(local_file):
+                print(f"[跳过] 已存在：{relative_path}")
                 continue
             url = get_download_url(api_url, full_path)
             if url:
